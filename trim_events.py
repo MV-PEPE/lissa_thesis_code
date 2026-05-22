@@ -68,11 +68,8 @@ with h5py.File(HDF5_INPUT, "r") as f_in, h5py.File(HDF5_OUTPUT, "w") as f_out:  
         for key, val in grp_in[event_name].attrs.items():      # iterate over all attributes of the original dataset
             ds.attrs[key] = val                                 # copy each attribute to the new dataset to preserve per-event metadata
 
-        meta.at[event_name, "trim_start"]  = trim_start   # record the actual start index of the trimmed trace
-        meta.at[event_name, "trim_end"]    = trim_end     # record the actual end index of the trimmed trace
-        meta.at[event_name, "buf_before"]  = buf_before   # record how many samples were added before the event
-        meta.at[event_name, "buf_after"]   = buf_after    # record how many samples were added after the event
-        meta.at[event_name, "trim_length"] = len(trimmed) # record the total length of the trimmed trace in samples
+        meta.at[event_name, "start"] = trim_start  # overwrite start with the buffered trim start
+        meta.at[event_name, "end"]   = trim_end    # overwrite end with the buffered trim end
 
 print(f"\nDone. {len(meta) - len(skipped)} events trimmed.")  # report how many events were successfully processed
 if skipped:                                                    # only print skipped list if there are any
@@ -88,4 +85,4 @@ print(f"Saved updated CSV  → {CSV_OUTPUT}")   # confirm CSV output path
 # ── Quick sanity check ────────────────────────────────────────────────────────
 
 print("\nTrim length stats (samples):")              # header for the summary stats
-print(meta_out["trim_length"].describe().astype(int))  # print min/max/mean/std of trimmed trace lengths to spot outliers
+# print(meta_out["trim_length"].describe().astype(int))  # print min/max/mean/std of trimmed trace lengths to spot outliers
