@@ -23,28 +23,31 @@ with h5py.File(H5_PATH, "r") as f:
 meta = pd.read_csv(CSV_PATH).set_index("event_name")
 
 # ── 3. Normalize to baseline ───────────────────────────────────────────────────
-def normalize_to_baseline(signal, baseline_frac=0.1):
-    n = max(1, int(len(signal) * baseline_frac))
-    baseline = signal[:n].mean()
-    return signal - baseline
+# def normalize_to_baseline(signal, baseline_frac=0.1):
+#     n = max(1, int(len(signal) * baseline_frac))
+#     baseline = signal[:n].mean()
+#     return signal - baseline
 
-# ── 4. Pick reference event (longest dwell time) ──────────────────────────────
+# ── 4. Pick reference event ─────────────────────────────────────────────────────
 common_keys = [k for k in signals if k in meta.index]
-ref_key    = meta.loc[common_keys, "dwell_time_ms"].idxmax()
-ref_signal = signals[ref_key] - meta.at[ref_key, "baseline_nA"]
-ref_dwell  = meta.loc[ref_key, "dwell_time_ms"]
-ref_time   = np.linspace(0, ref_dwell, DOWNSAMPLE_TO)
+# median_dwell = meta.loc[common_keys, "dwell_time_ms"].mean() # Pick a reference event base on mean time
+ref_key      = "event_00517"
+ref_signal   = signals[ref_key] - meta.at[ref_key, "baseline_nA"]
+ref_dwell    = meta.loc[ref_key, "dwell_time_ms"]
+ref_time     = np.linspace(0, ref_dwell, DOWNSAMPLE_TO)
 
 print(f"Reference: {ref_key} ({ref_dwell:.1f} ms) — aligning {len(common_keys)} events...")
 
 # ── 5. DTW-align all events ────────────────────────────────────────────────────
 aligned = []
 for i, key in enumerate(common_keys):
-    sig = signals[key] - meta.at[key, "baseline_nA"]
-    path = dtw.warping_path(ref_signal, sig)
-    ref_idx = np.array([p[0] for p in path])
-    evt_idx = np.array([p[1] for p in path])
-    interp  = np.interp(np.arange(len(ref_signal)), ref_idx, sig[evt_idx])
+
+    sig = signals[key] - meta.at[key, "baseline_nA"]  # baseline normalization
+
+    path        = dtw.warping_path(ref_signal, sig)
+    ref_idx     = np.array([p[0] for p in path])
+    evt_idx     = np.array([p[1] for p in path])
+    interp      = np.interp(np.arange(len(ref_signal)), ref_idx, sig[evt_idx])
     aligned.append(interp)
     if (i+1) % 10 == 0:
         print(f"  {i+1}/{len(common_keys)} done")
