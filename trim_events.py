@@ -74,6 +74,7 @@ with h5py.File(HDF5_INPUT, "r") as f_in, h5py.File(HDF5_OUTPUT, "w") as f_out:  
 
         meta.at[event_name, "start"] = trim_start  # overwrite start with the buffered trim start
         meta.at[event_name, "end"]   = trim_end    # overwrite end with the buffered trim end
+        meta.at[event_name, "baseline_nA"] = baseline  # save the computed baseline current value to metadata
 
 print(f"\nDone. {len(meta) - len(skipped)} events trimmed.")  # report how many events were successfully processed
 if skipped:                                                    # only print skipped list if there are any
