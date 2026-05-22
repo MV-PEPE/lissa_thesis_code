@@ -31,7 +31,7 @@ def normalize_to_baseline(signal, baseline_frac=0.1):
 # ── 4. Pick reference event (longest dwell time) ──────────────────────────────
 common_keys = [k for k in signals if k in meta.index]
 ref_key    = meta.loc[common_keys, "dwell_time_ms"].idxmax()
-ref_signal = normalize_to_baseline(signals[ref_key])
+ref_signal = signals[ref_key] - meta.at[ref_key, "baseline_nA"]
 ref_dwell  = meta.loc[ref_key, "dwell_time_ms"]
 ref_time   = np.linspace(0, ref_dwell, DOWNSAMPLE_TO)
 
@@ -40,7 +40,7 @@ print(f"Reference: {ref_key} ({ref_dwell:.1f} ms) — aligning {len(common_keys)
 # ── 5. DTW-align all events ────────────────────────────────────────────────────
 aligned = []
 for i, key in enumerate(common_keys):
-    sig  = normalize_to_baseline(signals[key])
+    sig = signals[key] - meta.at[key, "baseline_nA"]
     path = dtw.warping_path(ref_signal, sig)
     ref_idx = np.array([p[0] for p in path])
     evt_idx = np.array([p[1] for p in path])
