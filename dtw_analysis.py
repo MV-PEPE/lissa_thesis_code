@@ -4,8 +4,8 @@ import numpy as np
 from dtaidistance import dtw
 import matplotlib.pyplot as plt
 
-H5_PATH  = "./data_trimmed/data100_neg1000_peak_and_steps_forDTW_trimmed.h5"
-CSV_PATH = "./data_trimmed/data100_neg1000_peak_and_steps_forDTW_trimmed.csv"
+H5_PATH  = "./data_trimmed/data302-0.5gain_doublepeak_forDTW_trimmed.h5"
+CSV_PATH = "./data_trimmed/data302-0.5gain_doublepeak_forDTW_trimmed.csv"
 
 DOWNSAMPLE_TO = 500  # samples per event (increase later if needed)
 SAMPLING_RATE_KHZ = 50

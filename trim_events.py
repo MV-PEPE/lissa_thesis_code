@@ -19,10 +19,10 @@ import pandas as pd  # for reading and manipulating the CSV metadata
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 
-HDF5_INPUT        = "./data/data100_neg1000_peak_and_steps_forDTW.h5"                  # path to the original HDF5 file
-HDF5_OUTPUT       = "./data_trimmed/data100_neg1000_peak_and_steps_forDTW_trimmed.h5"  # path where the trimmed HDF5 will be saved
-CSV_INPUT         = "./data/data100_neg1000_peak_and_steps_forDTW.csv"                 # path to the original event metadata CSV
-CSV_OUTPUT        = "./data_trimmed/data100_neg1000_peak_and_steps_forDTW_trimmed.csv" # path where the updated CSV will be saved
+HDF5_INPUT        = "./data/data302-0.5gain_doublepeak_forDTW.h5"                  # path to the original HDF5 file
+HDF5_OUTPUT       = "./data_trimmed/data302-0.5gain_doublepeak_forDTW_trimmed.h5"  # path where the trimmed HDF5 will be saved
+CSV_INPUT         = "./data/data302-0.5gain_doublepeak_forDTW.csv"                 # path to the original event metadata CSV
+CSV_OUTPUT        = "./data_trimmed/data302-0.5gain_doublepeak_forDTW_trimmed.csv" # path where the updated CSV will be saved
 HDF5_GROUP        = "events"                                                           # HDF5 group that contains the event datasets
 SAMPLING_RATE_KHZ = 50  # acquisition sampling rate in kHz (50 kHz = 50 samples per ms)
 
