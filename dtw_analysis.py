@@ -7,7 +7,13 @@ import matplotlib.pyplot as plt
 H5_PATH  = "./data_trimmed/data302-0.5gain_doublepeak_forDTW_trimmed.h5"
 CSV_PATH = "./data_trimmed/data302-0.5gain_doublepeak_forDTW_trimmed.csv"
 
-DOWNSAMPLE_TO = 500  # samples per event (increase later if needed)
+DOWNSAMPLE_TO = 1500  # samples per event (increase later if needed)
+
+# Use for no downsampling
+# with h5py.File(H5_PATH, "r") as f:
+#     max_len = max(len(f[f"events/{k}"][()]) for k in f["events"].keys())  # find longest trace in samples
+# DOWNSAMPLE_TO = max_len  # use full resolution (no downsampling)
+
 SAMPLING_RATE_KHZ = 50
 
 # ── 1. Load & downsample signals ───────────────────────────────────────────────
@@ -41,12 +47,16 @@ ref_trim_len  = meta.at[ref_key, "end"] - meta.at[ref_key, "start"]  # full trim
 ref_total_ms  = ref_trim_len / SAMPLING_RATE_KHZ                      # convert full trimmed length to milliseconds
 ref_time      = np.linspace(0, ref_total_ms, DOWNSAMPLE_TO)           # time axis covering the full trimmed trace including buffers
 
+print(f"Reference: {ref_key}, dwell_time_ms: {ref_dwell:.2f}")
+
 print(f"Reference: {ref_key} ({ref_dwell:.1f} ms) — aligning {len(common_keys)} events...")
 
 # ── 5. DTW-align all events ────────────────────────────────────────────────────
 aligned = []
+# print(meta.loc[common_keys, "delta_I_baseline_nA"].describe())
+print(meta.loc[common_keys, "dwell_time_ms"].describe())
 for i, key in enumerate(common_keys):
-
+    # print(f"{key}: delta_I_baseline_nA = {meta.at[key, 'delta_I_baseline_nA']:.6f}")
     sig = (signals[key] - meta.at[key, "baseline_nA"]) / meta.at[key, "delta_I_baseline_nA"]  # baseline-subtract and normalise amplitude so peak dip = -1
 
     path        = dtw.warping_path(ref_signal, sig)
