@@ -10,7 +10,8 @@ Requirements:
 """
 
 import pandas as pd              # for loading and combining CSV metadata
-import matplotlib.pyplot as plt  # for plotting
+import plotly.express as px  # for interactive scatter plots
+import plotly.io as pio      # for saving interactive HTML files
 from pathlib import Path         # for navigating the folder structure
 
 # ── Configuration ─────────────────────────────────────────────────────────────
@@ -76,29 +77,34 @@ for prefix, dfs in group_data.items():                   # loop over each group
 OUTPUT_DIR.mkdir(exist_ok=True)  # create output directory if it doesn't exist
 
 def make_scatter(x_col, y_col, x_label, y_label, filename):
-    """Create a scatter plot for all groups with one color per group."""
-    fig, ax = plt.subplots(figsize=(10, 6))              # create figure
+    """Create an interactive scatter plot for all groups with one color per group."""
+    frames = []                                                    # list to collect all group dataframes
+    for prefix, df in group_dfs.items():                           # loop over each group
+        df = df.copy()                                             # avoid modifying the original dataframe
+        df["group_label"] = GROUPS[prefix]                         # add display name column for plotly
+        frames.append(df)                                          # add to list
 
-    for prefix, df in group_dfs.items():                               # loop over each group
-        for i, (subfolder, sub_df) in enumerate(df.groupby("subfolder")):  # loop over each subfolder within the group
-            ax.scatter(
-                sub_df[x_col], sub_df[y_col],                          # x and y data
-                color=COLORS[prefix],                                   # color represents the group
-                marker=MARKERS[i % len(MARKERS)],                       # shape represents the subfolder
-                label=f"{GROUPS[prefix]} - {subfolder}",               # legend entry with group and subfolder name
-                alpha=0.5,                                              # transparency
-                s=15,                                                   # marker size
-            )
+    combined = pd.concat(frames, ignore_index=True)                # combine all groups into one dataframe
 
-    ax.set_xlabel(x_label)                               # x-axis label
-    ax.set_ylabel(y_label)                               # y-axis label
-    ax.legend(loc="upper right", title="Group")          # legend with group colors
-    plt.tight_layout()                                   # prevent labels from being clipped
-    out_path = OUTPUT_DIR / filename                     # full output path
-    plt.savefig(out_path, dpi=150)                       # save figure to file
-    plt.show()                                           # display figure interactively
-    print(f"Saved: {out_path}")                          # confirm the file was saved
-    plt.close()                                          # close figure to free memory
+    fig = px.scatter(
+        combined,
+        x=x_col,                                                   # x axis column
+        y=y_col,                                                   # y axis column
+        color="group_label",                                       # color by group
+        symbol="subfolder",                                        # shape by subfolder
+        color_discrete_map={GROUPS[p]: COLORS[p] for p in GROUPS}, # use our custom colors
+        labels={x_col: x_label, y_col: y_label},                  # axis labels
+        hover_data=["event_name", "dwell_time_ms", "area_nA_ms", "delta_I_rel"],  # show on hover
+        opacity=0.6,                                               # transparency
+    )
+
+    fig.update_traces(marker=dict(size=6))                         # set marker size
+    fig.update_layout(legend_title="Group / Subfolder")            # legend title
+
+    out_path = OUTPUT_DIR / filename.replace(".png", ".html")      # save as HTML instead of PNG
+    pio.write_html(fig, str(out_path))                             # save interactive HTML file
+    fig.show()                                                     # open in browser
+    print(f"Saved: {out_path}")                                    # confirm the file was saved
 
 # ── Generate 4 scatter plots ───────────────────────────────────────────────────
 
