@@ -37,6 +37,7 @@ def auto_bin_width(data):
     """Compute bin width using Scott's rule: 3.5 * std / n^(1/3)"""
     return 3.5 * np.std(data) / (len(data) ** (1/3))  # Scott's rule for optimal bin width
 
+X_CUTOFF_PERCENTILE = 95   # show only up to this percentile of data (e.g. 99 = cut top 1%)
 KDE_POINTS = 500  # number of points to evaluate curves at
 
 GROUPS = {
@@ -165,7 +166,7 @@ for row_idx, prefix in enumerate(group_list):             # loop over group rows
             row=row_idx + 1, col=col_idx + 1,             # correct subplot cell
         )
 
-        data_max = data.max() * 1.05                                        # end x-axis just past the last data point
+        data_max = np.percentile(data, X_CUTOFF_PERCENTILE) * 1.05         # cut off top outliers using percentile
         data_min = data.min() - (data.max() - data.min()) * 0.02            # small padding on the left
         fig.update_xaxes(range=[data_min, data_max], title_text=x_label,
                  title_font=dict(size=13), row=row_idx + 1, col=col_idx + 1)
