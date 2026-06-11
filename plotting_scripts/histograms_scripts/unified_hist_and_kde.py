@@ -128,26 +128,6 @@ fig = make_subplots(
     vertical_spacing=0.10,                                # spacing between rows
 )
 
-# ── Add row labels on the left side ───────────────────────────────────────────
-
-# compute y positions for each row centre in paper coordinates
-row_height = 1.0 / n_rows                                # fractional height of each row
-for row_idx, row_title in enumerate(row_titles):
-    axis_idx = row_idx * n_cols + 1                                     # index of first subplot in this row
-    yref_str = f"y{axis_idx} domain" if axis_idx > 1 else "y domain"   # y1 is just "y" in Plotly
-    fig.add_annotation(
-        text=f"<b>{row_title}</b>",
-        xref="paper", 
-        yref=yref_str,
-        x=-0.07,                                                    # position to the left
-        y=0.5,                                                      # always centred within the subplot domain
-        showarrow=False,
-        textangle=-90,
-        font=dict(size=15, color="black"),
-        xanchor="center",
-        yanchor="middle",
-    )
-
 # ── Fill group rows (bars + spline) ───────────────────────────────────────────
 
 for row_idx, prefix in enumerate(group_list):             # loop over group rows
@@ -224,6 +204,27 @@ for col_idx, (col_name, x_label) in enumerate(VARIABLES):  # loop over columns
     fig.update_yaxes(title_text="Density" if col_idx == 0 else "",
                      row=n_rows, col=col_idx + 1)            # density label on first column only
 
+# ── Add row labels on the left side ───────────────────────────────────────────
+
+# compute y positions for each row centre in paper coordinates
+row_height = 1.0 / n_rows                                # fractional height of each row
+
+for row_idx, row_title in enumerate(row_titles):
+    axis_idx = row_idx * n_cols + 1                                     # index of first subplot in this row
+    yref_str = f"y{axis_idx} domain" if axis_idx > 1 else "y domain"   # y1 is just "y" in Plotly
+    fig.add_annotation(
+        text=f"<b>{row_title}</b>",
+        xref="paper", 
+        yref=yref_str,
+        x=-0.07,                                                    # position to the left
+        y=0.5,                                                      # always centred within the subplot domain
+        showarrow=False,
+        textangle=-90,
+        font=dict(size=15, color="black"),
+        xanchor="center",
+        yanchor="middle",
+    )
+
 # ── Layout and save ───────────────────────────────────────────────────────────
 
 fig.update_layout(
@@ -231,7 +232,7 @@ fig.update_layout(
     width=400 * n_cols,                                      # scale width to number of columns
     barmode="overlay",                                       # overlay bars if needed
     legend_title="Comparison groups",                        # legend title
-    margin=dict(l=80, r=20, t=60, b=40),                     # margins: left space for row labels
+    margin=dict(l=120, r=20, t=60, b=40),                    # more left margin for labels
 )
 
 OUTPUT_FILE.parent.mkdir(exist_ok=True)                      # create output directory if needed
