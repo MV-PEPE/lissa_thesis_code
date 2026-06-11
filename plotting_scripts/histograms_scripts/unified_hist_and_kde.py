@@ -32,7 +32,11 @@ DATA_DIRS = [
 
 COMPARISON_GROUPS = ["aLA_holo", "aLA_apo", "BSA"]  # groups to show in comparison row
 
-BIN_WIDTH  = 10   # bin width for bar histograms (in x-axis units)
+# Automatically determine the optimal bin width
+def auto_bin_width(data):
+    """Compute bin width using Scott's rule: 3.5 * std / n^(1/3)"""
+    return 3.5 * np.std(data) / (len(data) ** (1/3))  # Scott's rule for optimal bin width
+
 KDE_POINTS = 500  # number of points to evaluate curves at
 
 GROUPS = {
@@ -150,14 +154,15 @@ for row_idx, prefix in enumerate(group_list):             # loop over group rows
     for col_idx, (col_name, x_label) in enumerate(VARIABLES):  # loop over columns
         x_range = x_ranges[col_name]                      # shared x range for this column
         df      = group_dfs[prefix]                       # dataframe for this group
-        data    = df[col_name].dropna().values             # data values, NaN removed
+        data    = df[col_name].dropna().values            # data values, NaN removed
+        bin_width = auto_bin_width(data)                  # compute optimal bin width for this variable and group
         color   = COLORS[prefix]                          # group color
 
         # bar histogram
         fig.add_trace(
             go.Histogram(
                 x=data,                                   # data to bin
-                xbins=dict(size=BIN_WIDTH),               # fixed bin width
+                xbins=dict(size=bin_width),               # automatic bin width
                 marker_color=hex_to_rgba(color, 0.5),     # semi-transparent fill
                 marker_line=dict(color=color, width=1),   # solid outline
                 name=GROUPS[prefix],                      # name for hover
@@ -167,7 +172,7 @@ for row_idx, prefix in enumerate(group_list):             # loop over group rows
         )
 
         # spline curve through bar tops
-        x_spl, y_spl = spline_over_histogram(data, x_range, BIN_WIDTH, KDE_POINTS)
+        x_spl, y_spl = spline_over_histogram(data, x_range, bin_width, KDE_POINTS)
         fig.add_trace(
             go.Scatter(
                 x=x_spl, y=y_spl,                         # spline curve
