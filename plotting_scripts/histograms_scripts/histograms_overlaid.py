@@ -84,7 +84,7 @@ def make_overlaid_histogram(col, x_label, filename):
             marker_color=COLORS[prefix],                 # group color
             histnorm="",                                 # use raw counts on y-axis
             opacity=1.0,                                 # fully opaque lines
-            autobinx=True,                              # auto bin width
+            xbins=dict(size=10),  # fixed bin width of 2 MOhm for all groups
         ))
 
     fig.update_traces(histfunc="count")                  # count events per bin
