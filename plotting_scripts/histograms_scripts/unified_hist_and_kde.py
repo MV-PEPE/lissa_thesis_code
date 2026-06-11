@@ -165,8 +165,10 @@ for row_idx, prefix in enumerate(group_list):             # loop over group rows
             row=row_idx + 1, col=col_idx + 1,             # correct subplot cell
         )
 
-        fig.update_xaxes(range=x_range, title_text=x_label,
-                         title_font=dict(size=13), row=row_idx + 1, col=col_idx + 1)  # x range and label
+        data_max = data.max() * 1.05                                        # end x-axis just past the last data point
+        data_min = data.min() - (data.max() - data.min()) * 0.02            # small padding on the left
+        fig.update_xaxes(range=[data_min, data_max], title_text=x_label,
+                 title_font=dict(size=13), row=row_idx + 1, col=col_idx + 1)
         fig.update_yaxes(title_text="Count" if col_idx == 0 else "",
                          row=row_idx + 1, col=col_idx + 1)  # count label on first column only
 
