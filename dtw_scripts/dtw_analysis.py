@@ -16,8 +16,8 @@ import numpy as np
 from dtaidistance import dtw
 import matplotlib.pyplot as plt
 
-H5_PATH  = "./data_trimmed/data302-0.5gain_doublepeak_forDTW_trimmed.h5"
-CSV_PATH = "./data_trimmed/data302-0.5gain_doublepeak_forDTW_trimmed.csv"
+H5_PATH  = "./data/data_for_dtw/data_trimmed/data501_0.5gain_twostepsbeforedip_forDTW_trimmed.h5"
+CSV_PATH = "./data/data_for_dtw/data_trimmed/data501_0.5gain_twostepsbeforedip_forDTW_trimmed.csv"
 
 DOWNSAMPLE_TO = 3000  # samples per event (increase later if needed)
 
@@ -59,10 +59,8 @@ print(f"Reference: {ref_key} ({ref_dwell:.1f} ms) — aligning {len(common_keys)
 
 # ── 4. DTW-align all events ────────────────────────────────────────────────────
 aligned = []
-# print(meta.loc[common_keys, "delta_I_baseline_nA"].describe())
 print(meta.loc[common_keys, "dwell_time_ms"].describe())
 for i, key in enumerate(common_keys):
-    # print(f"{key}: delta_I_baseline_nA = {meta.at[key, 'delta_I_baseline_nA']:.6f}")
     sig = (signals[key] - meta.at[key, "baseline_nA"]) / meta.at[key, "delta_I_baseline_nA"]  # baseline-subtract and normalise amplitude so peak dip = -1
 
     path        = dtw.warping_path(ref_signal, sig)
