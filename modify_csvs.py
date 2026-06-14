@@ -18,7 +18,6 @@ import h5py                    # for reading HDF5 files
 import numpy as np             # for numerical array operations
 import pandas as pd            # for loading and saving CSV metadata
 from pathlib import Path       # for navigating the folder structure
-import ruptures as rpt         # for change-point detection (step counting)
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 
@@ -31,7 +30,9 @@ OUTPUT_DIR = Path("modified_csvs")  # directory to save updated CSVs
 HDF5_GROUP = "events"               # HDF5 group containing the event datasets
 
 SAMPLING_RATE_KHZ = 50              # sampling rate in kHz (50 samples per ms)
-PELT_PENALTY = 0.05                    # penalty for ruptures Pelt algorithm; higher = fewer detected steps
+
+STEP_WINDOW    = 20  # window size for std-based step detection (in samples)
+STEP_THRESHOLD = 4   # t-statistic threshold for std-based step detection
 
 # ── Helper functions ───────────────────────────────────────────────────────────
 
@@ -40,12 +41,32 @@ def compute_baseline(region: np.ndarray) -> float:
     skip = max(1, len(region) // 5)      # skip first ~20% of region
     return region[skip:].mean()          # mean of remaining samples
 
-def count_steps(trace, penalty):
-    """Count the number of steps (change points) in a trace using ruptures Pelt."""
-    algo         = rpt.Pelt(model="l2").fit(trace)         # fit Pelt with an L2 cost model (detects mean shifts)
-    breakpoints  = algo.predict(pen=penalty)               # find change points for the given penalty
-    n_steps      = len(breakpoints) - 1                    # last breakpoint is always the trace length, so subtract 1
-    return max(0, n_steps)                                 # ensure non-negative
+def count_steps(signal, window, threshold):
+    """Count steps using a sliding t-statistic-like score between adjacent windows."""
+    n      = len(signal)
+    scores = np.zeros(n)  # t-statistic score at each point
+
+    for i in range(window, n - window):                              # avoid edges where windows don't fit
+        before = signal[i - window : i]                              # window before this point
+        after  = signal[i : i + window]                              # window after this point
+
+        mean_diff  = after.mean() - before.mean()                    # difference in means
+        pooled_std = np.sqrt((before.var() + after.var()) / 2)       # pooled standard deviation
+
+        if pooled_std > 0:                                            # avoid division by zero
+            scores[i] = mean_diff / pooled_std                        # t-statistic-like score
+
+    flagged = np.where(np.abs(scores) > threshold)[0]                 # indices exceeding threshold
+
+    # group consecutive flagged indices into single step events
+    n_steps = 0
+    if len(flagged) > 0:
+        n_steps = 1
+        for k in range(1, len(flagged)):
+            if flagged[k] != flagged[k-1] + 1:                        # gap found, new step group
+                n_steps += 1
+
+    return n_steps
 
 # ── Process all folders ────────────────────────────────────────────────────────
 
@@ -91,11 +112,12 @@ for data_dir in DATA_DIRS:                                    # loop over both d
                 dI_max = event_trace.max()                    # maximum current deviation from baseline
                 dI_min = event_trace.min()                    # minimum current deviation from baseline
 
-                dwell_samples  = end - start                               # event length in samples
-                post_buffer    = int(round(dwell_samples / 3))             # post-event buffer based on dwell time
-                step_end       = min(end + post_buffer, len(trace))        # end of step-counting region, clamped to trace length
-                step_region    = trace[start:step_end]                     # region to run step detection on
-                n_steps        = count_steps(step_region, PELT_PENALTY)    # count steps in this region
+                dwell_samples  = end - start
+                post_buffer    = int(round(dwell_samples / 3))
+                step_end       = min(end + post_buffer, len(trace))
+                peak_idx       = start + np.argmin(trace[start:end])     # find index of maximum current dip within the event
+                step_region    = trace[peak_idx:step_end]                # region starting from the peak dip
+                n_steps        = count_steps(step_region, STEP_WINDOW, STEP_THRESHOLD)
 
                 meta.at[event_name, "post_event_baseline_nA"] = post_baseline  # save post-event baseline
                 meta.at[event_name, "dI_nA_max"]              = dI_max         # save max current deviation
