@@ -41,21 +41,21 @@ X_CUTOFF_PERCENTILE = 95   # show only up to this percentile of data (e.g. 99 = 
 KDE_POINTS = 500  # number of points to evaluate curves at
 
 GROUPS = {
-    "aLA_holo": "aLA holo",  # group display names keyed by folder prefix
+    "aLA_holo": "holo α-LA",  # group display names keyed by folder prefix
     "BSA":      "BSA",
-    "aLA_apo":  "aLA apo",
+    "aLA_apo":  "apo α-LA",
 }
 
 COLORS = {
     "aLA_holo": "#e6194b",  # red
-    "BSA":      "#3cb44b",  # green
-    "aLA_apo":  "#911eb4",  # purple
+    "BSA":      "#2698ba",  # cyan
+    "aLA_apo":  "#33c110",  # green
 }
 
 VARIABLES = [
     ("resistance_MOhm", "R (MOhm)"),        # column 1: resistance
     ("dwell_time_ms",   "Dwell Time (ms)"), # column 2: dwell time
-    ("area_nA_ms",      "EC (nA ms)"),      # column 3: event charge
+    ("area_nA_ms",      "EC (nA x ms)"),      # column 3: event charge
     ("dI_nA_max",       "dI max (nA)"),     # column 4: maximum deviation of the current
 ]
 
