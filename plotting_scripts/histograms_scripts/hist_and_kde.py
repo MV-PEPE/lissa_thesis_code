@@ -45,8 +45,8 @@ GROUPS = {
 
 COLORS = {
     "aLA_holo": "#e6194b",  # red
-    "BSA":      "#3cb44b",  # green
-    "aLA_apo":  "#911eb4",  # purple
+    "BSA":      "#2698ba",  # cyan
+    "aLA_apo":  "#33c110",  # green
 }
 
 OUTPUT_DIR = Path("histograms")  # directory to save the output HTML files
