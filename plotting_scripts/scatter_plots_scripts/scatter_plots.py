@@ -106,12 +106,12 @@ def make_scatter(x_col, y_col, x_label, y_label, filename):
     
     for trace in fig.data:                                         # loop over each trace
         if "," in trace.name:                                      # legend entries are "group, subfolder"
-            trace.name = trace.name.split(",")[1].strip()          # keep only the subfolder part
+            trace.name = trace.name.split(",")[0].strip()          # keep only the group part
 
     fig.update_layout(
-        legend_title="Subfolder",                                     # updated legend title
-        font=dict(size=16),                                           # bigger text everywhere (axis labels, ticks, legend)
-        title_font=dict(size=18),                                     # bigger plot title
+        legend_title="Group",                                      # updated legend title
+        font=dict(size=16),                                        # bigger text everywhere (axis labels, ticks, legend)
+        title_font=dict(size=18),                                  # bigger plot title
         legend=dict(itemsizing="constant"),  # makes legend markers a consistent, slightly larger size independent of plot markers
     )
 
@@ -158,7 +158,7 @@ if COMBINED_PAGE:                                                  # only build 
 
     combined_fig.update_layout(
         height=1100, width=2000,
-        legend_title="Subfolder",                                     # updated legend title
+        legend_title="Group",                                         # updated legend title
         font=dict(size=20),                                           # bigger text everywhere
         legend=dict(itemsizing="constant"),  # makes legend markers a consistent, slightly larger size independent of plot markers
     )
