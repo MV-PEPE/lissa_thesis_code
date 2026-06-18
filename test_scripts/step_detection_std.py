@@ -108,6 +108,6 @@ for i, window in enumerate(WINDOW_SIZES):
 
 plt.suptitle(f"Std-Based Step Detection Tuning — {EVENT_NAME}", fontsize=14)
 plt.tight_layout()
-plt.savefig("step_detection_std_tuning.png", dpi=150)
+plt.savefig("test_scripts_plots/step_detection_std_tuning.png", dpi=150)
 plt.show()
-print("Saved: step_detection_std_tuning.png")
+print("Saved: test_scripts_plots/step_detection_std_tuning.png")

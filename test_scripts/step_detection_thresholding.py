@@ -97,6 +97,6 @@ for i, window in enumerate(SMOOTH_WINDOWS):
 
 plt.suptitle(f"Derivative Step Detection Tuning — {EVENT_NAME}", fontsize=14)
 plt.tight_layout()
-plt.savefig("step_detection_derivative_tuning.png", dpi=150)
+plt.savefig("test_scripts_plots/step_detection_derivative_tuning.png", dpi=150)
 plt.show()
-print("Saved: step_detection_derivative_tuning.png")
+print("Saved: test_scripts_plots/step_detection_derivative_tuning.png")
