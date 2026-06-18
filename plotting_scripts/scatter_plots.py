@@ -27,12 +27,12 @@ DATA_DIRS = [
 
 # group prefixes and their display names
 GROUPS = {
-    "aLA_holo_1": "α-LA holo 1",
-    "aLA_holo_2": "α-LA holo 2",
+    "aLA_holo_1": "holo α-LA 1",
+    "aLA_holo_2": "holo α-LA 2",
     "BSA_1":      "BSA 1",
     "BSA_2":      "BSA 2",
     "BSA_3":      "BSA 3",
-    "aLA_apo_1":  "α-LA apo 1",
+    "aLA_apo_1":  "apo α-LA 1",
 }
 
 # high-contrast colors for each group
@@ -84,7 +84,7 @@ for prefix, df in group_dfs.items():                       # loop over each grou
     for i, subfolder in enumerate(subfolders):              # index restarts at 0 for every group
         symbol_map[subfolder] = SYMBOLS[i % len(SYMBOLS)]   # assign symbols starting from "circle" again
         index = subfolder[len(prefix) + 1:]                 # part of the subfolder name after "prefix_", e.g. "1"
-        subfolder_label_map[subfolder] = f"{GROUPS[prefix]} {index}"  # e.g. "α-LA holo 1 1"
+        subfolder_label_map[subfolder] = f"{GROUPS[prefix]}.{index}"  # e.g. "α-LA holo 1.1"
         subfolder_order.append(subfolder)                   # record this subfolder's position in the desired legend order
 
 # ── Plotting helper ────────────────────────────────────────────────────────────
