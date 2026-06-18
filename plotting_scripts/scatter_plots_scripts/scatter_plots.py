@@ -125,9 +125,9 @@ def make_scatter(x_col, y_col, x_label, y_label, filename):
 # ── Generate 4 scatter plots ───────────────────────────────────────────────────
 
 plot_specs = [
-    ("dwell_time_ms",   "area_nA_ms",  "Dwell Time (ms)", "EC (nA ms)",      "ec_vs_dwell_time.png"),
+    ("dwell_time_ms",   "area_nA_ms",  "Dwell Time (ms)", "EC (pC)",         "ec_vs_dwell_time.png"),
     ("dwell_time_ms",   "delta_I_rel", "Dwell Time (ms)", "Relative ΔI",     "delta_I_rel_vs_dwell_time.png"),
-    ("area_nA_ms",      "delta_I_rel", "EC (nA ms)",      "Relative ΔI",     "delta_I_rel_vs_ec.png"),
+    ("area_nA_ms",      "delta_I_rel", "EC (pC)",         "Relative ΔI",     "delta_I_rel_vs_ec.png"),
     ("resistance_MOhm", "dwell_time_ms", "R (MOhm)",      "Dwell Time (ms)", "dwell_time_vs_resistance.png"),
 ]
 

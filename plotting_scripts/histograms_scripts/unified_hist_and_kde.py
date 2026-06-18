@@ -55,7 +55,7 @@ COLORS = {
 VARIABLES = [
     ("resistance_MOhm", "R (MOhm)"),        # column 1: resistance
     ("dwell_time_ms",   "Dwell Time (ms)"), # column 2: dwell time
-    ("area_nA_ms",      "EC (nA x ms)"),      # column 3: event charge
+    ("area_nA_ms",      "EC (pC)"),         # column 3: event charge
     ("dI_nA_max",       "dI max (nA)"),     # column 4: maximum deviation of the current
 ]
 
