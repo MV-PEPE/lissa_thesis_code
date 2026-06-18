@@ -140,10 +140,11 @@ The `plotting_scripts` directory contains the scripts used for plotting (mostly 
     Creates the requested histogram or KDE plot (configurable).
     2. ## `unified_hist_and_kde.py`
     Creates a plot grid with both histograms and KDE plots.
-2. `scatter_plots_scripts` contains the scripts used to create scatter plots:
-    1. ## scatter_plots.py
-    Creates scatter plots that can be opened in a browser.
-3. ## `step_detection_plot.py`
+2. ## `scatter_plots.py`
+Creates scatter plots that can be opened in a browser.
+3. ## `single_event_trace_plot.py`
+Creates a plot of a specified event's trace with reference bars for current and time.
+4. ## `step_detection_plot.py`
 Creates a plot with detected steps in an event. Saves the output into the `dtw_plots` directory, because we use these plots together with other DTW plots.
 
 # Tuning (test) scripts
