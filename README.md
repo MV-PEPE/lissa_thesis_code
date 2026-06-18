@@ -1,20 +1,161 @@
-This projects contains multiple scripts that process events from an HDF5 file.
+This projects contains scripts for processing data and generating plots for Lissa's thesis. 
 
-# Plotting relevant scripts
+# Project structure
+**Important note:** The tree contains some directories that are not in the repository (i.e. data and generated plots)
 
-## recover_current.py
-Recovers the actual current (measured_current = 0.5 * real_current)
 
-## modify_csvs.py
-Calculates additional things and adds them to the CSVs (creates a copy of the original and puts the new ones into a separate directory)
+``` bash
+.
+├── data
+│   ├── data_for_dtw
+│   │   ├── data_trimmed
+│   │   ├── data_with_halfed_current
+│   │   └── data_with_real_current
+│   ├── data_for_plots
+│   │   ├── data_with_halfed_current
+│   │   │   ├── aLA_apo_1_1
+│   │   │   ├── aLA_apo_1_2
+│   │   │   ├── aLA_apo_1_3
+│   │   │   ├── aLA_holo_2_1
+│   │   │   ├── aLA_holo_2_2
+│   │   │   └── aLA_holo_2_3
+│   │   ├── data_with_real_current
+│   │   │   ├── 4_events
+│   │   │   ├── aLA_holo_1_1
+│   │   │   ├── aLA_holo_1_2
+│   │   │   ├── aLA_holo_1_3
+│   │   │   ├── aLA_holo_1_4
+│   │   │   ├── BSA_1_1
+│   │   │   ├── BSA_1_2
+│   │   │   ├── BSA_2_1
+│   │   │   ├── BSA_2_2
+│   │   │   ├── BSA_2_3
+│   │   │   ├── BSA_2_4
+│   │   │   ├── BSA_2_5
+│   │   │   ├── BSA_3_1
+│   │   │   └── BSA_3_2
+│   │   └── data_with_recovered_current
+│   │       ├── aLA_apo_1_1
+│   │       ├── aLA_apo_1_2
+│   │       ├── aLA_apo_1_3
+│   │       ├── aLA_holo_2_1
+│   │       ├── aLA_holo_2_2
+│   │       └── aLA_holo_2_3
+│   └── other
+├── dtw_plots
+│   ├── dtw_aligned_overlay.png
+│   ├── dtw_results.npz
+│   ├── mean_aligned_trace.png
+│   ├── mean_trace_step_detection.png
+│   ├── raw_baseline_overlay.png
+│   └── step_detection_plot.png
+├── dtw_scripts
+│   ├── dtw_analysis.py
+│   ├── dtw_plots.py
+│   └── trim_events.py
+├── histograms
+├── modified_csvs
+│   ├── data_with_real_current
+│   │   ├── aLA_holo_1_1
+│   │   ├── aLA_holo_1_2
+│   │   ├── aLA_holo_1_3
+│   │   ├── BSA_1_1
+│   │   ├── BSA_1_2
+│   │   ├── BSA_2_1
+│   │   ├── BSA_2_2
+│   │   ├── BSA_2_3
+│   │   ├── BSA_2_4
+│   │   ├── BSA_2_5
+│   │   ├── BSA_3_1
+│   │   └── BSA_3_2
+│   └── data_with_recovered_current
+│       ├── aLA_apo_1_1
+│       ├── aLA_apo_1_2
+│       ├── aLA_apo_1_3
+│       ├── aLA_holo_2_1
+│       ├── aLA_holo_2_2
+│       └── aLA_holo_2_3
+├── modify_csvs.py
+├── plot_legend.html
+├── plotting_scripts
+│   ├── histograms_scripts
+│   │   ├── hist_and_kde.py
+│   │   └── unified_hist_and_kde.py
+│   ├── scatter_plots_scripts
+│   │   └── scatter_plots.py
+│   └── step_detection_plot.py
+├── README.md
+├── recover_current.py
+├── scatter_plots
+└── test_scripts
+    ├── step_detection_std.py
+    ├── step_detection_thresholding.py
+    └── step_detection_tuning.py
+```
 
-## scatter_plots.py
-Creates scatter plots that can be opened in a browser
+# Data
 
-# DTW analysis relevant scripts
+The `data` directory contains all the relevant data that is used by the scripts.
+1. The `data_for_dtw` directory contains the data that is used by the DTW analysis and plotting scripts.
+    1. `trimmed_data` contains the data processed by the `trim_events.py`. That data is used by the `dtw_analysis.py` script.
+    2. `data_with_halfed_current` contains the data where the recorded current is 0.5 of the actual current. In order to run any analysis on that data, we have to recover the real data with a separate script.
+    3. `data_with_real_current` contains the data where the recorded current matches the actual current.
+2. The `data_for_plots` directory contains the data that is used by other plotting scripts.
+    1. `data_with_halfed_current` contains the data where the recorded current is 0.5 of the actual current. In order to run anything on that data, we first have to recover the real data with the `recover_current.py` script.
+    2. `data_with_real_current` contains the data where the recorded current matches the actual current. This data can be used by the relevant scripts.
+    3. `data_with_recovered_current` contains the output from the `recover_current.py` script. This data can be used by the relevant scripts.
+3. The `other` directory contains some other data. Not used anywhere currently.
 
-## trim_events.py
+The `dtw_plots` directory contains:
+1. The plots generated by the `dtw_plots.py` script.
+2. The data generated by the `dtw_analysis.py` script (`dtw_results.npz`), which is used for plotting.
+3. The step counting plot generated by the `plotting_scripts/step_detection_plot.py` script.
+
+The `histograms` directory contains the plots generated by the scripts in `plotting_scripts/histograms_scripts` directory.
+
+The `modified_csvs` directory contains the CSVs with additional relevant columns. These are the output of the `modify_csvs.py` script:
+1. `data_with_real_current` contains the data where the recorded current matches the actual current. This data can be used by the relevant scripts.
+2. `data_with_recovered_current` contains the data with the recovered current and columns affected by that recovery. This data can be used by the relevant scripts.
+
+The `scatter_plots` directory contains the plots created by the `scatter_plots.py` script.
+
+# DTW
+
+The `dtw_scripts` directory contain all the DTW analysis and plotting relevant scripts.
+
+## `dtw_analysis.py`
+Performs DTW analysis on the trimmed events and plots the result.
+
+## `dtw_plots.py`
+Plots the requested plots using the data generated by the `dtw_analysis.py` script.
+
+## `trim_events.py`
 Trims the events based off of where they actually start and finish. Also calculates some other parameters and writes everything into a new CSV.
 
-## dtw_analysis.py
-Performs DTW analysis on the trimmed events and plots the result.
+# Plotting
+
+The `plotting_scripts` directory contains the scripts used for plotting (mostly non-DTW-relevant plots with one small exception):
+1. `histograms_scripts` contains the scripts used to create histograms:
+    1. ## `hist_and_kde.py`
+    Creates the requested histogram or KDE plot (configurable).
+    2. ## `unified_hist_and_kde.py`
+    Creates a plot grid with both histograms and KDE plots.
+2. `scatter_plots_scripts` contains the scripts used to create scatter plots:
+    1. ## scatter_plots.py
+    Creates scatter plots that can be opened in a browser.
+3. ## `step_detection_plot.py`
+Creates a plot with detected steps in an event. Saves the output into the `dtw_plots` directory, because we use these plots together with other DTW plots.
+
+# Tuning (test) scripts
+
+The `test_scripts` directory contains three scripts with different step detection approaches. These are used to find the best approach and parameters for step detection for an event.
+
+# Other
+
+## recover_current.py
+Recovers the actual current (measured_current = 0.5 * real_current) and the columns affected by that recovery.
+
+## modify_csvs.py
+Calculates additional things and adds them to the input CSVs (creates a copy of the original and puts the new ones into the `modified_csvs` directory).
+
+`plot_legend.html` contains a nice legend for the plotting groups.
