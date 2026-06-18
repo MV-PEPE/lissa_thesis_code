@@ -32,7 +32,7 @@ rolling_std  = data["rolling_std"]
 raw_signals  = data["raw_signals"]
 raw_times    = data["raw_times"]
 ref_key      = str(data["ref_key"])
-ref_dwell    = float(data["ref_dwell"])
+# ref_dwell    = float(data["ref_dwell"])
 
 # ── Plot 1: DTW-aligned overlay ───────────────────────────────────────────────
 
