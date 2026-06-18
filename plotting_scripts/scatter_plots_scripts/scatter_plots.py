@@ -45,8 +45,8 @@ COLORS = {
     "aLA_apo_1":  "#33c110",  # green
 }
 
-# marker shapes cycling through subfolders within each group
-MARKERS = ["o", "^", "s", "D", "x", "P"]  # circle, triangle, square, diamond, cross, plus
+# marker shapes cycling through subfolders within each group (plotly symbol names, not matplotlib codes)
+SYMBOLS = ["circle", "triangle-up", "square", "diamond", "x", "cross"]  # circle, triangle, square, diamond, x, plus
 
 OUTPUT_DIR = Path("scatter_plots")  # directory to save the output figures
 
@@ -61,8 +61,8 @@ for data_dir in DATA_DIRS:                               # loop over both data d
         for prefix in GROUPS:                            # check which group this folder belongs to
             if folder_name.startswith(prefix):           # match folder name to group prefix
                 df = pd.read_csv(csv_path)               # load the CSV
-                df["group"]     = prefix           # tag each row with its group name
-                df["subfolder"] = folder_name      # tag each row with its specific subfolder name
+                df["group"]     = prefix                 # tag each row with its group name
+                df["subfolder"] = folder_name            # tag each row with its specific subfolder name
                 group_data[prefix].append(df)            # add to the group's list
                 print(f"  Loaded {len(df)} events from {csv_path.name} → group '{prefix}'")
                 break                                    # stop checking prefixes once matched
@@ -75,6 +75,17 @@ for prefix, dfs in group_data.items():                   # loop over each group
         print(f"Group '{prefix}': {len(group_dfs[prefix])} total events")
     else:
         print(f"Group '{prefix}': no data found")        # warn if a group has no data
+
+symbol_map = {}                                            # maps subfolder name -> plotly symbol
+subfolder_label_map = {}                                   # maps subfolder name -> legend label (group name + index)
+subfolder_order = []                                        # subfolder names in the order we want them to appear in the legend
+for prefix, df in group_dfs.items():                       # loop over each group
+    subfolders = sorted(df["subfolder"].unique())          # this group's subfolders, in a consistent order
+    for i, subfolder in enumerate(subfolders):              # index restarts at 0 for every group
+        symbol_map[subfolder] = SYMBOLS[i % len(SYMBOLS)]   # assign symbols starting from "circle" again
+        index = subfolder[len(prefix) + 1:]                 # part of the subfolder name after "prefix_", e.g. "1"
+        subfolder_label_map[subfolder] = f"{GROUPS[prefix]} {index}"  # e.g. "α-LA holo 1 1"
+        subfolder_order.append(subfolder)                   # record this subfolder's position in the desired legend order
 
 # ── Plotting helper ────────────────────────────────────────────────────────────
 
@@ -97,6 +108,8 @@ def make_scatter(x_col, y_col, x_label, y_label, filename):
         color="group_label",                                       # color by group
         symbol="subfolder",                                        # shape by subfolder
         color_discrete_map={GROUPS[p]: COLORS[p] for p in GROUPS}, # use our custom colors
+        symbol_map=symbol_map,                                     # assign symbols per subfolder, restarting at "circle" for each group
+        category_orders={"subfolder": subfolder_order},             # force the legend order to follow our group-by-group, numerically sorted ordering
         labels={x_col: x_label, y_col: y_label},                   # axis labels
         hover_data=["event_name", "dwell_time_ms", "area_nA_ms", "delta_I_rel"],  # show on hover
         opacity=0.6,                                               # transparency
@@ -106,7 +119,8 @@ def make_scatter(x_col, y_col, x_label, y_label, filename):
     
     for trace in fig.data:                                         # loop over each trace
         if "," in trace.name:                                      # legend entries are "group, subfolder"
-            trace.name = trace.name.split(",")[0].strip()          # keep only the group part
+            subfolder = trace.name.split(",")[1].strip()            # original subfolder name, e.g. "aLA_holo_1_1"
+            trace.name = subfolder_label_map[subfolder]             # replace with "group index", e.g. "α-LA holo 1 1"
 
     fig.update_layout(
         legend_title="Group",                                      # updated legend title
@@ -145,6 +159,8 @@ if COMBINED_PAGE:                                                  # only build 
         vertical_spacing=0.15,                                     # reduce gap between rows (default is ~0.3 for 2x2)
     )
 
+    PANEL_LETTERS = ["(a)", "(b)", "(c)", "(d)"]                        # one label per subplot, in the same order as plot_specs
+
     for i, (fig, x_label, y_label) in enumerate(figs):             # loop over each individual figure
         row = i // 2 + 1                                           # row index (1-indexed)
         col = i % 2 + 1                                            # column index (1-indexed)
@@ -155,6 +171,14 @@ if COMBINED_PAGE:                                                  # only build 
 
         combined_fig.update_xaxes(title_text=x_label, row=row, col=col)  # x-axis label
         combined_fig.update_yaxes(title_text=y_label, row=row, col=col)  # y-axis label
+
+        combined_fig.add_annotation(                                  # add the panel letter to this subplot's corner
+            text=PANEL_LETTERS[i], xref="x domain", yref="y domain",   # position relative to this subplot's own plot area (0-1), not the whole figure
+            x=1, y=1, xanchor="right", yanchor="top",                   # top-right corner of the plot area
+            xshift=-8, yshift=-8,                                       # nudge it slightly inward so it isn't flush against the border
+            showarrow=False, font=dict(size=20),                        # no arrow pointing anywhere, readable size
+            row=row, col=col,                                           # which subplot this label belongs to
+        )
 
     combined_fig.update_layout(
         height=1100, width=2000,
