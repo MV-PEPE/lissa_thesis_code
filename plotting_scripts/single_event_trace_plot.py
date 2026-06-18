@@ -32,9 +32,9 @@ POST_BUFFER_FRACTION = 1/3   # how much baseline to show after the event ends, a
 
 SHOW_SCALE_BAR = True   # True: hide the normal axes and draw a scale bar instead. False: show normal labeled axes.
 
-SCALE_BAR_MODE = "auto"   # "auto": size the bars automatically based on the trace. "fixed": use the exact sizes set below.
-FIXED_BAR_X = 5     # used only when SCALE_BAR_MODE = "fixed": length of the horizontal (time) bar, in ms
-FIXED_BAR_Y = 0.3   # used only when SCALE_BAR_MODE = "fixed": length of the vertical (current) bar, in nA
+SCALE_BAR_MODE = "fixed"   # "auto": size the bars automatically based on the trace. "fixed": use the exact sizes set below.
+FIXED_BAR_X = 25     # used only when SCALE_BAR_MODE = "fixed": length of the horizontal (time) bar, in ms
+FIXED_BAR_Y = 0.1   # used only when SCALE_BAR_MODE = "fixed": length of the vertical (current) bar, in nA
 
 SCALE_BAR_Y_FRACTION = 0.30   # used only when SCALE_BAR_MODE = "auto": target length of the vertical bar, as a fraction of the trace's current range
 SCALE_BAR_X_FRACTION = 0.15   # used only when SCALE_BAR_MODE = "auto": target length of the horizontal bar, as a fraction of the trace's time range (kept smaller so it stays clear of the dip)
@@ -45,7 +45,7 @@ SCALE_BAR_Y_MARGIN_FRAC = 0.05   # how far the scale bar sits below the trace, a
 TRACE_COLOR         = "black"   # color of the trace line
 TRACE_LINEWIDTH     = 1.8       # thickness of the trace line (thicker so it stays visible once the image is shrunk)
 SCALE_BAR_LINEWIDTH = 2.5       # thickness of the scale bar lines
-SCALE_BAR_FONTSIZE  = 20        # font size of the scale bar numbers (e.g. "5 ms")
+SCALE_BAR_FONTSIZE  = 28        # font size of the scale bar numbers (e.g. "5 ms")
 
 FIGURE_WIDTH_PX  = 1200   # width of the saved PNG, in pixels
 FIGURE_HEIGHT_PX = 500   # height of the saved PNG, in pixels
@@ -116,10 +116,10 @@ def add_scale_bar(ax, time_axis, trace_values, mode, fixed_x, fixed_y, x_frac, y
     ax.plot([anchor_x, anchor_x], [anchor_y, anchor_y + bar_y], color="black", linewidth=linewidth)   # draw the vertical (current) bar
     ax.plot([anchor_x, anchor_x + bar_x], [anchor_y, anchor_y], color="black", linewidth=linewidth)    # draw the horizontal (time) bar
 
-    ax.text(anchor_x - margin_x * 0.3, anchor_y + bar_y / 2, f"{bar_y:g} nA",          # add the current label, rotated, next to the vertical bar
-            rotation=90, ha="right", va="center", fontsize=fontsize)
-    ax.text(anchor_x + bar_x / 2, anchor_y - margin_y * 0.3, f"{bar_x:g} ms",          # add the time label below the horizontal bar
-            ha="center", va="top", fontsize=fontsize)
+    ax.text(anchor_x - margin_x * 0.3, anchor_y, f"{bar_y:g} nA",          # add the current label, rotated, starting at the bottom of the vertical bar so it grows upward, not outward from the middle
+        rotation=90, ha="right", va="bottom", fontsize=fontsize)
+    ax.text(anchor_x, anchor_y - margin_y * 0.9, f"{bar_x:g} ms",          # add the time label below the horizontal bar, starting at its left end so it grows rightward, not outward from the middle
+        ha="left", va="top", fontsize=fontsize)
 
     ax.set_xlim(time_axis[0] - margin_x, time_axis[-1] + margin_x)    # adjust the visible x-range so the bar fits nicely
     ax.set_ylim(anchor_y - margin_y, trace_values.max() + margin_y)   # adjust the visible y-range so the bar fits nicely
