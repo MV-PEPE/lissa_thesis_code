@@ -27,12 +27,12 @@ DATA_DIRS = [
 
 # group prefixes and their display names
 GROUPS = {
-    "aLA_holo_1": "aLA holo 1",
-    "aLA_holo_2": "aLA holo 2",
+    "aLA_holo_1": "α-LA holo 1",
+    "aLA_holo_2": "α-LA holo 2",
     "BSA_1":      "BSA 1",
     "BSA_2":      "BSA 2",
     "BSA_3":      "BSA 3",
-    "aLA_apo_1":  "aLA apo 1",
+    "aLA_apo_1":  "α-LA apo 1",
 }
 
 # high-contrast colors for each group
