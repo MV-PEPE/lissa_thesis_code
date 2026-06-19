@@ -21,7 +21,7 @@ CSV_PATH = "./data/data_for_dtw/data_trimmed/data501_0.5gain_twostepsbeforedip_f
 
 OUTPUT_NPZ = "dtw_plots/dtw_results.npz"  # path to save the DTW results
 
-DOWNSAMPLE_TO = 3000  # samples per event (increase later if needed)
+DOWNSAMPLE_TO = 1500  # samples per event (increase later if needed)
 
 # Use for no downsampling
 # with h5py.File(H5_PATH, "r") as f:
@@ -49,8 +49,8 @@ common_keys = [k for k in signals if k in meta.index]
 mean_dwell = meta.loc[common_keys, "dwell_time_ms"].mean()
 ref_key    = (meta.loc[common_keys, "dwell_time_ms"] - mean_dwell).abs().idxmin()  # pick event closest to mean dwell time
 
-ref_signal = (signals[ref_key] - meta.at[ref_key, "baseline_nA"])     # baseline-subtract
-ref_dwell    = meta.loc[ref_key, "dwell_time_ms"]
+ref_signal    = (signals[ref_key] - meta.at[ref_key, "baseline_nA"])     # baseline-subtract
+ref_dwell     = meta.loc[ref_key, "dwell_time_ms"]
 ref_trim_len  = meta.at[ref_key, "end"] - meta.at[ref_key, "start"]   # full trimmed trace length in samples (from updated start/end in CSV)
 ref_total_ms  = ref_trim_len / SAMPLING_RATE_KHZ                      # convert full trimmed length to milliseconds
 ref_time      = np.linspace(0, ref_total_ms, DOWNSAMPLE_TO)           # time axis covering the full trimmed trace including buffers
