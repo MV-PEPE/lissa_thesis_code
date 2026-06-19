@@ -50,7 +50,10 @@ with h5py.File(HDF5_INPUT, "r") as f_in, h5py.File(HDF5_OUTPUT, "w") as f_out:  
             continue                                                             # skip to the next event
 
         trace = np.array(grp_in[event_name], dtype=np.float64)  # load the full raw current trace as a float64 array
-        trace = trace * 2
+        
+        if ("data_with_halfed_current" in HDF5_INPUT):  # recover the current if necessary
+            trace = trace * 2
+            print("Current recovered")
 
         dwell_samples = int(round(row["dwell_time_ms"] * SAMPLING_RATE_KHZ))  # convert dwell time from ms to samples (ms × 50 = samples)
 
