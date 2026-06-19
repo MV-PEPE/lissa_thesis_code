@@ -124,6 +124,10 @@ ax_dtw        = axes[0, 1]  # top-right:    DTW-aligned overlay
 ax_steps      = axes[1, 0]  # bottom-left:  mean aligned trace with step detection
 ax_staircase  = axes[1, 1]  # bottom-right: piecewise constant (staircase) approximation of the mean trace
 
+TICK_FONTSIZE = 16  # size of the numbers along the x and y axes, for all 4 subplots
+for ax in axes.flat:                                  # loop over all 4 subplots at once
+    ax.tick_params(axis="both", labelsize=TICK_FONTSIZE)  # set the size of the axis tick numbers
+
 # ── Top-left: Raw baseline-subtracted overlay ─────────────────────────────────
 
 for sig, time_axis in zip(raw_signals, raw_times):                  # loop over each raw event trace
@@ -131,10 +135,10 @@ for sig, time_axis in zip(raw_signals, raw_times):                  # loop over 
     time_shifted = time_axis - time_axis[peak_idx_raw] + RAW_PLOT_PRE_DIP_MS  # align dips across traces, but keep x=0 at the plot's left edge, not at the dip
     ax_raw.plot(time_shifted, sig, color="steelblue", alpha=0.15, linewidth=0.5)  # plot the shifted trace
 
-ax_raw.set_xlim(-RAW_PLOT_CUTOFF_MS / 4, RAW_PLOT_CUTOFF_MS)       # show a bit before the dip and up to the cutoff after
-ax_raw.set_xlabel("Time (ms)")                                       # x-axis label
-ax_raw.set_ylabel("Baseline-subtracted current (nA)")                # y-axis label
-ax_raw.set_title("Raw Event Overlays (baseline-subtracted, no alignment)")  # subplot title
+ax_raw.set_xlim(0, RAW_PLOT_PRE_DIP_MS + RAW_PLOT_CUTOFF_MS)         # start at the left edge (x=0), dip sits at RAW_PLOT_PRE_DIP_MS, cutoff extends RAW_PLOT_CUTOFF_MS past the dip
+ax_raw.set_xlabel("Time (ms)", fontsize=20)                          # x-axis label
+ax_raw.set_ylabel("Baseline-subtracted current (nA)", fontsize=18)   # y-axis label
+ax_raw.set_title("Raw Event Overlays (baseline-subtracted, no alignment)", fontsize=22)  # subplot title
 
 # ── Top-right: DTW-aligned overlay ───────────────────────────────────────────
 
@@ -145,24 +149,26 @@ ax_dtw.plot(time_aligned, mean_trace, color="darkred", linewidth=1.5, label="Mea
 ax_dtw.plot(time_aligned, rolling_std, color="orange", linewidth=1.5, label="Rolling std of mean")  # rolling std
 ax_dtw.plot(time_aligned, ref_signal, color="black", linewidth=1, linestyle="--", label="Reference")  # reference trace
 
-ax_dtw.axvline(0, color="gray", linestyle=":", linewidth=0.8)       # vertical line at t=0
-ax_dtw.set_xlim(time_aligned[0], DTW_PLOT_CUTOFF_MS)                # limit x-axis to the configured cutoff
-ax_dtw.set_xlabel("Time (ms)")                                       # x-axis label
-ax_dtw.set_ylabel("Baseline-subtracted current (nA)")                # y-axis label
-ax_dtw.set_title("DTW-Aligned Event Overlays")                       # subplot title
-ax_dtw.legend(loc="lower right")                                     # legend in the bottom-right corner
+ax_dtw.axvline(0, color="gray", linestyle=":", linewidth=0.8)        # vertical line at t=0
+ax_dtw.set_xlim(time_aligned[0], DTW_PLOT_CUTOFF_MS)                 # limit x-axis to the configured cutoff
+ax_dtw.set_xlabel("Time (ms)", fontsize=20)                          # x-axis label
+ax_dtw.set_ylabel("Baseline-subtracted current (nA)", fontsize=18)   # y-axis label
+ax_dtw.set_title("DTW-Aligned Event Overlays", fontsize=22)          # subplot title
+ax_dtw.legend(loc="lower left", fontsize=14)                        # legend in the bottom-right corner
 
 # ── Bottom-left: Mean aligned trace with step detection ─────────────────────
 
 ax_steps.plot(time_aligned, mean_trace, color="darkred", linewidth=1.5)  # mean trace
 
+ax_steps.axvline(time_aligned[peak_idx], color="green", linestyle="--", linewidth=1)  # mark the dip itself as a step too, same style as the others
+
 for step_idx in steps:                                               # mark each detected step with a vertical dashed line
-    ax_steps.axvline(time_aligned[peak_idx + step_idx], color="red", linestyle="--", linewidth=1)
+    ax_steps.axvline(time_aligned[step_start + step_idx], color="green", linestyle="--", linewidth=1)
 
 ax_steps.set_xlim(time_aligned[0], MEAN_TRACE_CUTOFF_MS)            # limit x-axis to the configured cutoff
-ax_steps.set_xlabel("Time (ms)")                                     # x-axis label
-ax_steps.set_ylabel("Baseline-subtracted current (nA)")              # y-axis label
-ax_steps.set_title(f"Step Detection on Mean Aligned Trace ({n_steps} steps detected)")  # subplot title includes step count
+ax_steps.set_xlabel("Time (ms)", fontsize=20)                                     # x-axis label
+ax_steps.set_ylabel("Baseline-subtracted current (nA)", fontsize=18)              # y-axis label
+ax_steps.set_title(f"Step Detection on Mean Aligned Trace\n({n_steps} steps detected)", fontsize=22)  # subplot title includes step count
 
 # ── Bottom-right: Staircase approximation of the mean aligned trace ───────────
 
@@ -175,29 +181,33 @@ step_boundaries = sorted(set((                                                  
     + [cutoff_idx]                                                    # end of the plot region (at the cutoff)
 )))
 
-for i in range(len(step_boundaries) - 1):                            # loop over each segment between consecutive boundaries
+for i in range(len(step_boundaries) - 1):                             # loop over each segment between consecutive boundaries
     seg_start = step_boundaries[i]                                    # first sample index of this segment
     seg_end   = step_boundaries[i + 1]                                # last sample index of this segment (exclusive)
     seg_mean  = mean_trace[seg_start:seg_end].mean()                  # mean current level of the mean trace within this segment
     t_start   = time_aligned[seg_start]                               # time of the segment's left boundary
     t_end     = time_aligned[seg_end - 1]                             # time of the segment's right boundary
+    segment_label = "Mean current level" if i == 0 else None          # only label the first segment, so the legend doesn't get one entry per flat line
     ax_staircase.plot([t_start, t_end], [seg_mean, seg_mean],         # draw a flat horizontal line at the segment's mean level
-                      color="darkred", linewidth=1.5)
+                      color="green", linewidth=3, label=segment_label)
 
-for step_idx in steps:                                                # draw the same vertical step lines as in the step detection panel
-    ax_staircase.axvline(time_aligned[peak_idx + step_idx], color="red", linestyle="--", linewidth=1)
+ax_staircase.axvline(time_aligned[peak_idx], color="green", linestyle="--", linewidth=1, label="Detected step")  # mark the dip itself as a step too, same style as the others
 
-ax_staircase.set_xlim(time_aligned[0], MEAN_TRACE_CUTOFF_MS)         # limit x-axis to the configured cutoff
-ax_staircase.set_xlabel("Time (ms)")                                  # x-axis label
-ax_staircase.set_ylabel("Baseline-subtracted current (nA)")           # y-axis label
-ax_staircase.set_title(f"Staircase Approximation ({n_steps} steps)")  # subplot title
+for step_idx in steps:      # draw the same vertical step lines as in the step detection panel
+    ax_staircase.axvline(time_aligned[step_start + step_idx], color="green", linestyle="--", linewidth=1)
+
+ax_staircase.set_xlim(time_aligned[0], MEAN_TRACE_CUTOFF_MS)              # limit x-axis to the configured cutoff
+ax_staircase.set_xlabel("Time (ms)", fontsize=20)                         # x-axis label
+ax_staircase.set_ylabel("Baseline-subtracted current (nA)", fontsize=18)  # y-axis label
+ax_staircase.set_title(f"Steps and Current Levels of Mean Aligned Trace\n({n_steps} unique levels detected)", fontsize=22)  # subplot title
+ax_staircase.legend(loc="lower left", fontsize=14)  # legend for the mean current level and detected step lines
 
 # ── Save ──────────────────────────────────────────────────────────────────────
 
 n_events = len(aligned)                     # total number of DTW-aligned events, used for the figure title
-fig.suptitle(f"{n_events} events", fontsize=16)  # single title above the whole 2x2 grid
+fig.suptitle(f"{n_events} events\n", fontsize=24)  # single title above the whole 2x2 grid
 
-plt.tight_layout()                          # adjust spacing between subplots so nothing overlaps
+plt.tight_layout(h_pad=SUBPLOT_PAD, w_pad=SUBPLOT_PAD)  # adjust spacing between subplots so nothing overlaps
 plt.savefig(OUTPUT_PNG, dpi=150)            # save the combined figure
 plt.show()                                  # display on screen
 print(f"Saved: {OUTPUT_PNG}")               # confirm where the file was saved
