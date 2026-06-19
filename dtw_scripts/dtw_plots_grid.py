@@ -17,12 +17,30 @@ import matplotlib.pyplot as plt
 
 INPUT_NPZ = "dtw_plots/dtw_results.npz"  # path to the saved DTW results
 
-DTW_PLOT_CUTOFF_MS  = 140  # x-axis cutoff for the DTW-aligned overlay plot
-RAW_PLOT_CUTOFF_MS  = 110  # x-axis cutoff for the raw baseline-subtracted overlay plot
-MEAN_TRACE_CUTOFF_MS = 140  # x-axis cutoff for the mean aligned trace plots
+DTW_PLOT_CUTOFF_MS  = 110  # x-axis cutoff for the DTW-aligned overlay plot
+RAW_PLOT_CUTOFF_MS  = 60  # x-axis cutoff for the raw baseline-subtracted overlay plot
+RAW_PLOT_PRE_DIP_MS = RAW_PLOT_CUTOFF_MS / 2  # how much time to show before the dip; this is also where the dip ends up on the x-axis, since x=0 is now the left edge
+MEAN_TRACE_CUTOFF_MS = 110  # x-axis cutoff for the mean aligned trace plots
 
-STEP_WINDOW    = 50  # window size for std-based step detection (in samples)
-STEP_THRESHOLD = 5   # t-statistic threshold for std-based step detection
+# how many samples on either side of a point to compare when checking for a step. 
+# SMALLER = more sensitive to short/sharp steps but noisier, can split one real step into two. 
+# LARGER = smoother and less prone to noise, but can blur out small/quick steps or 
+# merge two close-together real steps into one
+STEP_WINDOW    = 100  # window size for std-based step detection (in samples)
+
+# how big a jump has to be (in standard deviations) to count as a step. 
+# LOWER = catches smaller/subtler steps but risks false positives from noise. 
+# HIGHER = only catches large, clear jumps but may miss subtle ones
+STEP_THRESHOLD = 4   # t-statistic threshold for std-based step detection
+
+# how far before the dip step detection should start looking, in ms (0 = start exactly at the dip)
+STEP_DETECTION_PRE_DIP_MS = 40
+
+# if two detected steps land closer together than this (in ms), merge them into one. 
+# Fixes a single sharp transition occasionally being detected as two separate steps
+MIN_STEP_SEPARATION_MS = 2 
+
+SUBPLOT_PAD = 5.0  # extra gap specifically between the 4 subplots, in font-size units (matplotlib's default is about 1.08); higher = more space
 
 OUTPUT_PNG = "dtw_plots/dtw_combined_2x2.png"  # path to save the combined 2x2 figure
 
@@ -41,8 +59,10 @@ ref_key      = str(data["ref_key"])   # name of the reference event
 
 # ── Step detection (runs before plotting so n_steps is available for the title) ──
 
-def detect_steps(signal, window, threshold):
-    """Slide two adjacent windows, compute t-statistic-like score, flag step locations."""
+def detect_steps(signal, window, threshold, min_separation=0):
+    """Slide two adjacent windows, compute t-statistic-like score, flag step locations.
+    Any two detected steps closer together than min_separation (in samples) get merged
+    into one, fixing a single sharp transition that occasionally gets split into two."""
     n      = len(signal)
     scores = np.zeros(n)
 
@@ -67,13 +87,31 @@ def detect_steps(signal, window, threshold):
                 group_start = flagged[k]
         steps.append((group_start + flagged[-1]) // 2)
 
+    if min_separation > 0 and len(steps) > 1:               # merge any steps that ended up too close together
+        merged = [steps[0]]
+        for step in steps[1:]:
+            if step - merged[-1] < min_separation:          # this step is too close to the last kept one
+                merged[-1] = (merged[-1] + step) // 2       # replace it with the midpoint of the two
+            else:
+                merged.append(step)                         # far enough away, keep it as its own step
+        steps = merged
+
     return steps
 
 peak_idx    = np.argmin(mean_trace)                                # index of the deepest dip in the mean aligned trace
 cutoff_idx  = np.searchsorted(time_aligned, MEAN_TRACE_CUTOFF_MS)  # index corresponding to the plot's cutoff time
-step_region = mean_trace[peak_idx:cutoff_idx]                      # region from dip to the cutoff to run step detection on
 
-steps   = detect_steps(step_region, STEP_WINDOW, STEP_THRESHOLD)   # run step detection
+step_start_time = time_aligned[peak_idx] - STEP_DETECTION_PRE_DIP_MS  # how far before the dip step detection should start, in ms
+step_start      = max(np.searchsorted(time_aligned, step_start_time), 0)  # corresponding index; clamped so it never goes before the very start of the trace
+step_region     = mean_trace[step_start:cutoff_idx]                 # region to run step detection on, now possibly starting before the dip
+
+ms_per_sample           = time_aligned[1] - time_aligned[0]               # time spacing between consecutive samples, in ms
+min_separation_samples  = round(MIN_STEP_SEPARATION_MS / ms_per_sample)   # convert the configured ms separation into samples, since detect_steps works in samples
+
+steps   = detect_steps(step_region, STEP_WINDOW, STEP_THRESHOLD, min_separation_samples)   # run step detection
+
+steps = [s for s in steps if abs((step_start + s) - peak_idx) >= min_separation_samples]  # drop any detected step that's really just the dip transition itself; the dip already gets its own line below, independent of this list
+
 n_steps = len(steps)                                                # number of detected steps
 print(f"Detected {n_steps} steps in mean aligned trace")
 
@@ -89,8 +127,8 @@ ax_staircase  = axes[1, 1]  # bottom-right: piecewise constant (staircase) appro
 # ── Top-left: Raw baseline-subtracted overlay ─────────────────────────────────
 
 for sig, time_axis in zip(raw_signals, raw_times):                  # loop over each raw event trace
-    peak_idx_raw  = np.argmin(sig)                                  # index of this event's own peak dip
-    time_shifted  = time_axis - time_axis[peak_idx_raw]             # shift time axis so peak dip = t=0
+    peak_idx_raw = np.argmin(sig)                                    # index of this event's own peak dip
+    time_shifted = time_axis - time_axis[peak_idx_raw] + RAW_PLOT_PRE_DIP_MS  # align dips across traces, but keep x=0 at the plot's left edge, not at the dip
     ax_raw.plot(time_shifted, sig, color="steelblue", alpha=0.15, linewidth=0.5)  # plot the shifted trace
 
 ax_raw.set_xlim(-RAW_PLOT_CUTOFF_MS / 4, RAW_PLOT_CUTOFF_MS)       # show a bit before the dip and up to the cutoff after
@@ -130,11 +168,12 @@ ax_steps.set_title(f"Step Detection on Mean Aligned Trace ({n_steps} steps detec
 
 # build the boundary indices that separate each flat segment:
 # the trace is divided by the step positions, extended to the plot start and cutoff
-step_boundaries = (                                                   # one index per boundary between flat segments
+step_boundaries = sorted(set((                                                   # one index per boundary between flat segments
     [0]                                                               # start of the plot region
-    + [peak_idx + s for s in steps]                                  # each detected step position, shifted back to full-trace indices
+    + [peak_idx]                                                      # the dip itself, now also treated as a step boundary
+    + [step_start + s for s in steps]                                   # each detected step position, shifted back to full-trace indices
     + [cutoff_idx]                                                    # end of the plot region (at the cutoff)
-)
+)))
 
 for i in range(len(step_boundaries) - 1):                            # loop over each segment between consecutive boundaries
     seg_start = step_boundaries[i]                                    # first sample index of this segment
