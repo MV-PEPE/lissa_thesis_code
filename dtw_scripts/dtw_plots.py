@@ -131,9 +131,9 @@ ax.set_ylabel("Baseline-subtracted current (nA)")
 ax.set_title("DTW-Aligned Event Overlays")
 ax.legend(loc="lower right")
 plt.tight_layout()
-plt.savefig("dtw_plots/dtw_aligned_overlay.png", dpi=150)
+plt.savefig("dtw_plots/dtw_plots_separate/dtw_aligned_overlay.png", dpi=150)
 plt.show()
-print("Saved: dtw_plots/dtw_aligned_overlay.png")
+print("Saved: dtw_plots/dtw_plots_separate/dtw_aligned_overlay.png")
 
 # ── Plot 2: Raw baseline-subtracted overlay (no DTW alignment) ────────────────
 
@@ -149,9 +149,9 @@ ax2.set_xlabel("Time (ms)")
 ax2.set_ylabel("Baseline-subtracted current (nA)")
 ax2.set_title("Raw Event Overlays (baseline-subtracted, no alignment)")
 plt.tight_layout()
-plt.savefig("dtw_plots/raw_baseline_overlay.png", dpi=150)
+plt.savefig("dtw_plots/dtw_plots_separate/raw_baseline_overlay.png", dpi=150)
 plt.show()
-print("Saved: dtw_plots/raw_baseline_overlay.png")
+print("Saved: dtw_plots/dtw_plots_separate/raw_baseline_overlay.png")
 
 # ── Plot 3: Mean aligned trace alone ──────────────────────────────────────────
 
@@ -166,9 +166,9 @@ ax3.set_ylabel("Baseline-subtracted current (nA)")
 ax3.set_title("Mean Aligned Trace")
 ax3.legend(loc="lower right")
 plt.tight_layout()
-plt.savefig("dtw_plots/mean_aligned_trace.png", dpi=150)
+plt.savefig("dtw_plots/dtw_plots_separate/mean_aligned_trace.png", dpi=150)
 plt.show()
-print("Saved: dtw_plots/mean_aligned_trace.png")
+print("Saved: dtw_plots/dtw_plots_separate/mean_aligned_trace.png")
 
 # ── Plot 4: Step detection on the mean aligned trace ──────────────────────────
 
@@ -186,9 +186,9 @@ ax4.set_xlabel("Time (ms)")
 ax4.set_ylabel("Baseline-subtracted current (nA)")
 ax4.set_title(f"Step Detection on Mean Aligned Trace ({n_steps + 1} steps detected)")  # +1 for the dip itself
 plt.tight_layout()
-plt.savefig("dtw_plots/mean_trace_step_detection.png", dpi=150)
+plt.savefig("dtw_plots/dtw_plots_separate/mean_trace_step_detection.png", dpi=150)
 plt.show()
-print("Saved: dtw_plots/mean_trace_step_detection.png")
+print("Saved: dtw_plots/dtw_plots_separate/mean_trace_step_detection.png")
 
 # ── Plot 5: Staircase approximation of the mean aligned trace ─────────────────
 
@@ -224,6 +224,6 @@ ax5.set_ylabel("Baseline-subtracted current (nA)")
 ax5.set_title(f"Steps and Current Levels of Mean Aligned Trace ({n_steps + 1} unique levels detected)")  # +1 for the dip itself
 ax5.legend(loc="lower right")
 plt.tight_layout()
-plt.savefig("dtw_plots/mean_trace_staircase.png", dpi=150)
+plt.savefig("dtw_plots/dtw_plots_separate/mean_trace_staircase.png", dpi=150)
 plt.show()
-print("Saved: dtw_plots/mean_trace_staircase.png")
+print("Saved: dtw_plots/dtw_plots_separate/mean_trace_staircase.png")
