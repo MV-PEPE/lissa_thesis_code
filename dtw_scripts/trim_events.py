@@ -19,11 +19,11 @@ import pandas as pd  # for reading and manipulating the CSV metadata
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 
-HDF5_INPUT        = "./data/data_for_dtw/data_with_halfed_current/data501_0.5gain_twostepsbeforedip_forDTW/data501_0.5gain_twostepsbeforedip_forDTW.h5"                  # path to the original HDF5 file
-HDF5_OUTPUT       = "./data/data_for_dtw/data_trimmed/data501_0.5gain_twostepsbeforedip_forDTW_trimmed.h5"  # path where the trimmed HDF5 will be saved
-CSV_INPUT         = "./data/data_for_dtw/data_with_halfed_current/data501_0.5gain_twostepsbeforedip_forDTW/data501_0.5gain_twostepsbeforedip_forDTW.csv"                 # path to the original event metadata CSV
-CSV_OUTPUT        = "./data/data_for_dtw/data_trimmed/data501_0.5gain_twostepsbeforedip_forDTW_trimmed.csv" # path where the updated CSV will be saved
-HDF5_GROUP        = "events"                                                           # HDF5 group that contains the event datasets
+HDF5_INPUT        = "./data/data_for_dtw/data_with_recovered_current/aLA_apo_1_1/data302-0.5gain_doublepeak_forDTW.h5" # path to the original HDF5 file
+HDF5_OUTPUT       = "./data/data_for_dtw/data_trimmed/aLA_apo_1_1/data302-0.5gain_doublepeak_forDTW_trimmed.h5"  # path where the trimmed HDF5 will be saved
+CSV_INPUT         = "./data/data_for_dtw/data_with_recovered_current/aLA_apo_1_1/data302-0.5gain_doublepeak_forDTW.csv" # path to the original event metadata CSV
+CSV_OUTPUT        = "./data/data_for_dtw/data_trimmed/aLA_apo_1_1/data302-0.5gain_doublepeak_forDTW_trimmed.csv" # path where the updated CSV will be saved
+HDF5_GROUP        = "events" # HDF5 group that contains the event datasets
 SAMPLING_RATE_KHZ = 50  # acquisition sampling rate in kHz (50 kHz = 50 samples per ms)
 
 # ── Load metadata ─────────────────────────────────────────────────────────────
@@ -51,9 +51,9 @@ with h5py.File(HDF5_INPUT, "r") as f_in, h5py.File(HDF5_OUTPUT, "w") as f_out:  
 
         trace = np.array(grp_in[event_name], dtype=np.float64)  # load the full raw current trace as a float64 array
         
-        if ("data_with_halfed_current" in HDF5_INPUT):  # recover the current if necessary
-            trace = trace * 2
-            print("Current recovered")
+        # if ("data_with_halfed_current" in HDF5_INPUT):  # recover the current if necessary
+        #     trace = trace * 2
+        #     print("Current recovered")
 
         dwell_samples = int(round(row["dwell_time_ms"] * SAMPLING_RATE_KHZ))  # convert dwell time from ms to samples (ms × 50 = samples)
 
