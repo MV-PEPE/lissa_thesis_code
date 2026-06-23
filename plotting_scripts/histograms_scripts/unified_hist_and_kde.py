@@ -2,13 +2,13 @@
 Unified Grid Histogram + KDE Comparison
 -----------------------------------------
 Generates an interactive grid of plots:
-    - Rows:    one per group + one comparison row at the bottom
-    - Columns: one per variable (resistance, dwell time, EC)
+    - Rows:    one per variable (resistance, dwell time, EC, ΔI max)
+    - Columns: one per group + one comparison column on the right
 
-Group rows: bar histogram with spline curve overlay (count on y-axis)
-Comparison row: KDE density curves for configured groups overlaid
+Group columns: bar histogram with spline curve overlay (count on y-axis)
+Comparison column: KDE density curves for configured groups overlaid
 
-All subplots in the same column share the same x-axis range.
+All subplots in the same row share the same x-axis range.
 
 Requirements:
     pip install pandas plotly scipy numpy
@@ -30,15 +30,14 @@ DATA_DIRS = [
     Path("modified_csvs/data_with_recovered_current"),  # directory with recovered current data
 ]
 
-COMPARISON_GROUPS = ["aLA_holo", "aLA_apo", "BSA"]  # groups to show in comparison row
+COMPARISON_GROUPS = ["aLA_holo", "aLA_apo", "BSA"]  # groups to show in the comparison column
 
-# Automatically determine the optimal bin width
 def auto_bin_width(data):
     """Compute bin width using Scott's rule: 3.5 * std / n^(1/3)"""
     return 3.5 * np.std(data) / (len(data) ** (1/3))  # Scott's rule for optimal bin width
 
-X_CUTOFF_PERCENTILE = 95   # show only up to this percentile of data (e.g. 99 = cut top 1%)
-KDE_POINTS = 500  # number of points to evaluate curves at
+X_CUTOFF_PERCENTILE = 95   # show only up to this percentile of data (e.g. 95 = cut top 5%)
+KDE_POINTS = 500           # number of points to evaluate curves at
 
 GROUPS = {
     "aLA_holo": "holo α-LA",  # group display names keyed by folder prefix
@@ -53,10 +52,11 @@ COLORS = {
 }
 
 VARIABLES = [
-    ("resistance_MOhm", "R (MOhm)"),        # column 1: resistance
-    ("dwell_time_ms",   "Dwell Time (ms)"), # column 2: dwell time
-    ("area_nA_ms",      "EC (pC)"),         # column 3: event charge
-    ("dI_nA_max",       "ΔI max (nA)"),     # column 4: maximum deviation of the current
+    ("resistance_MOhm", "R (MOhm)"),        # row 1: resistance
+    ("dwell_time_ms",   "Dwell Time (ms)"), # row 2: dwell time
+    ("area_nA_ms",      "EC (pC)"),         # row 3: event charge
+    ("dI_nA_max",       "ΔI max (nA)"),     # row 4: maximum deviation of the current
+    ("delta_I_rel",     "Relative ΔI"),     # row 5: relative current drop
 ]
 
 OUTPUT_FILE = Path("histograms") / "grid_histogram_kde.html"  # output file path
@@ -94,44 +94,44 @@ def hex_to_rgba(hex_color, alpha=0.3):
 
 def spline_over_histogram(data, x_range, bin_width, n_points):
     """Fit a smooth spline through histogram bar tops."""
-    bins        = np.arange(x_range[0], x_range[1] + bin_width, bin_width)  # bin edges matching histogram
-    counts, edges = np.histogram(data, bins=bins)                            # compute bar counts
-    centres     = (edges[:-1] + edges[1:]) / 2                              # bin centre x positions
-    spline      = make_interp_spline(centres, counts, k=3)                   # fit cubic spline through bar tops
-    x_vals      = np.linspace(centres[0], centres[-1], n_points)            # evenly spaced x points
-    y_vals      = np.clip(spline(x_vals), 0, None)                          # evaluate spline, clip negatives to 0
+    bins           = np.arange(x_range[0], x_range[1] + bin_width, bin_width)  # bin edges matching histogram
+    counts, edges  = np.histogram(data, bins=bins)                              # compute bar counts
+    centres        = (edges[:-1] + edges[1:]) / 2                              # bin centre x positions
+    spline         = make_interp_spline(centres, counts, k=3)                   # fit cubic spline through bar tops
+    x_vals         = np.linspace(centres[0], centres[-1], n_points)            # evenly spaced x points
+    y_vals         = np.clip(spline(x_vals), 0, None)                          # evaluate spline, clip negatives to 0
     return x_vals, y_vals
 
-# ── Compute shared x-axis ranges per column (variable) ────────────────────────
+# ── Compute shared x-axis ranges per row (variable) ───────────────────────────
 
 x_ranges = {}
 for col_name, _ in VARIABLES:                             # loop over each variable
-    all_vals    = pd.concat([df[col_name].dropna() for df in group_dfs.values()])  # all values across groups
-    padding     = (all_vals.max() - all_vals.min()) * 0.05  # 5% padding on each side
-    x_ranges[col_name] = [all_vals.min() - padding, all_vals.max() + padding]  # shared x range for this column
+    all_vals = pd.concat([df[col_name].dropna() for df in group_dfs.values()])  # all values across groups
+    padding  = (all_vals.max() - all_vals.min()) * 0.05   # 5% padding on each side
+    x_ranges[col_name] = [all_vals.min() - padding, all_vals.max() + padding]  # shared x range for this row
 
 # ── Build subplot grid ────────────────────────────────────────────────────────
 
-group_list = list(group_dfs.keys())                       # ordered list of group prefixes
-n_rows     = len(group_list) + 1                          # one row per group + comparison row
-n_cols     = len(VARIABLES)                               # one column per variable
-row_titles = [GROUPS[p] for p in group_list] + ["Comparison"]  # row label for each row
+group_list  = list(group_dfs.keys())                      # ordered list of group prefixes
+n_rows      = len(VARIABLES)                              # one row per variable
+n_cols      = len(group_list) + 1                         # one column per group + comparison column on the right
+col_titles  = [GROUPS[p] for p in group_list] + ["Comparison"]  # column label for each column
 
 fig = make_subplots(
     rows=n_rows, cols=n_cols,
-    horizontal_spacing=0.08,
-    vertical_spacing=0.10,
+    horizontal_spacing=0.08,                              # gap between columns
+    vertical_spacing=0.10,                                # gap between rows
 )
 
-# ── Fill group rows (bars + spline) ───────────────────────────────────────────
+# ── Fill group columns (bars + spline) ────────────────────────────────────────
 
-for row_idx, prefix in enumerate(group_list):             # loop over group rows
-    for col_idx, (col_name, x_label) in enumerate(VARIABLES):  # loop over columns
-        x_range = x_ranges[col_name]                      # shared x range for this column
-        df      = group_dfs[prefix]                       # dataframe for this group
-        data    = df[col_name].dropna().values            # data values, NaN removed
+for col_idx, prefix in enumerate(group_list):             # loop over group columns
+    for row_idx, (col_name, x_label) in enumerate(VARIABLES):  # loop over variable rows
+        x_range   = x_ranges[col_name]                    # shared x range for this row
+        df        = group_dfs[prefix]                     # dataframe for this group
+        data      = df[col_name].dropna().values           # data values, NaN removed
         bin_width = auto_bin_width(data)                  # compute optimal bin width for this variable and group
-        color   = COLORS[prefix]                          # group color
+        color     = COLORS[prefix]                        # group color
 
         # bar histogram
         fig.add_trace(
@@ -141,7 +141,7 @@ for row_idx, prefix in enumerate(group_list):             # loop over group rows
                 marker_color=hex_to_rgba(color, 0.5),     # semi-transparent fill
                 marker_line=dict(color=color, width=1),   # solid outline
                 name=GROUPS[prefix],                      # name for hover
-                showlegend=False,                         # no legend for group rows
+                showlegend=False,                         # no legend for group columns
             ),
             row=row_idx + 1, col=col_idx + 1,             # correct subplot cell
         )
@@ -154,7 +154,7 @@ for row_idx, prefix in enumerate(group_list):             # loop over group rows
                 mode="lines",                             # line only, no markers
                 line=dict(color=color, width=2),          # group color, solid line
                 name=GROUPS[prefix],                      # name for hover
-                showlegend=False,                         # no legend for group rows
+                showlegend=False,                         # no legend for group columns
             ),
             row=row_idx + 1, col=col_idx + 1,             # correct subplot cell
         )
@@ -165,10 +165,10 @@ for row_idx, prefix in enumerate(group_list):             # loop over group rows
                          title_font=dict(size=20), tickfont=dict(size=16), row=row_idx + 1, col=col_idx + 1)
         fig.update_yaxes(title_text="Count", title_font=dict(size=20), tickfont=dict(size=16), row=row_idx + 1, col=col_idx + 1)
 
-# ── Fill comparison row (KDE density curves) ──────────────────────────────────
+# ── Fill comparison column (KDE density curves) ───────────────────────────────
 
-for col_idx, (col_name, x_label) in enumerate(VARIABLES):  # loop over columns
-    x_range = x_ranges[col_name]                            # shared x range for this column
+for row_idx, (col_name, x_label) in enumerate(VARIABLES):  # loop over variable rows
+    x_range = x_ranges[col_name]                            # shared x range for this row
 
     for prefix in COMPARISON_GROUPS:                        # loop over comparison groups
         if prefix not in group_dfs:                         # skip missing groups
@@ -190,31 +190,45 @@ for col_idx, (col_name, x_label) in enumerate(VARIABLES):  # loop over columns
                 fill="tozeroy",                              # fill area under curve
                 fillcolor=hex_to_rgba(color, 0.15),          # semi-transparent fill
                 name=GROUPS[prefix],                         # group name for legend
-                showlegend=col_idx == 0,                     # show legend only in first column
+                showlegend=row_idx == 0,                     # show legend only in first row
             ),
-            row=n_rows, col=col_idx + 1,                     # last row, current column
+            row=row_idx + 1, col=n_cols,                     # last column, current row
         )
 
     fig.update_xaxes(range=x_range, title_text=x_label,
-                     title_font=dict(size=20), tickfont=dict(size=16), row=n_rows, col=col_idx + 1)  # x range and label
-    fig.update_yaxes(title_text="Density", title_font=dict(size=20), tickfont=dict(size=16), row=n_rows, col=col_idx + 1)
+                     title_font=dict(size=20), tickfont=dict(size=16), row=row_idx + 1, col=n_cols)  # x range and label
+    fig.update_yaxes(title_text="Density", title_font=dict(size=20), tickfont=dict(size=16), row=row_idx + 1, col=n_cols)
+
+# ── Add column labels on the top ──────────────────────────────────────────────
+
+for col_idx, col_title in enumerate(col_titles):
+    axis_idx = col_idx + 1                                              # subplot index for the first row of this column
+    xref_str = f"x{axis_idx} domain" if axis_idx > 1 else "x domain"  # x1 is just "x" in Plotly
+    fig.add_annotation(
+        text=f"<b>{col_title}</b>",
+        xref=xref_str,
+        yref="paper",
+        x=0.5,                                                          # centred horizontally within the subplot domain
+        y=1.03,                                                         # just above the top of the subplot area
+        showarrow=False,
+        font=dict(size=20, color="black"),
+        xanchor="center",
+        yanchor="bottom",
+    )
 
 # ── Add row labels on the left side ───────────────────────────────────────────
 
-# compute y positions for each row centre in paper coordinates
-row_height = 1.0 / n_rows                                # fractional height of each row
-
-for row_idx, row_title in enumerate(row_titles):
+for row_idx, (_, y_label) in enumerate(VARIABLES):
     axis_idx = row_idx * n_cols + 1                                     # index of first subplot in this row
     yref_str = f"y{axis_idx} domain" if axis_idx > 1 else "y domain"   # y1 is just "y" in Plotly
     fig.add_annotation(
-        text=f"<b>{row_title}</b>",
-        xref="paper", 
+        text=f"<b>{y_label}</b>",
+        xref="paper",
         yref=yref_str,
-        x=-0.07,                                                    # position to the left
-        y=0.5,                                                      # always centred within the subplot domain
+        x=-0.07,                                                        # position to the left of the subplots
+        y=0.5,                                                          # centred vertically within the subplot domain
         showarrow=False,
-        textangle=-90,
+        textangle=-90,                                                  # rotate text to read bottom-to-top
         font=dict(size=20, color="black"),
         xanchor="center",
         yanchor="middle",
@@ -226,8 +240,9 @@ fig.update_layout(
     height=300 * n_rows,                                     # scale height to number of rows
     width=400 * n_cols,                                      # scale width to number of columns
     barmode="overlay",                                       # overlay bars if needed
-    showlegend=False,                                        # hide the legend entirely
-    margin=dict(l=120, r=20, t=60, b=40),                    # more left margin for labels
+    showlegend=True,                                         # show legend for comparison column
+    legend=dict(font=dict(size=16)),                         # legend font size
+    margin=dict(l=120, r=20, t=80, b=40),                    # more left margin for row labels, more top for column labels
 )
 
 OUTPUT_FILE.parent.mkdir(exist_ok=True)                      # create output directory if needed
